@@ -1,0 +1,57 @@
+#include <PN5180.h>
+#include <PN5180ISO15693.h>
+
+#define PN5180_NSS 5
+#define PN5180_BUSY 16
+#define PN5180_RST 17
+#define LED_BUILTIN 2
+
+PN5180ISO15693 nfc(PN5180_NSS, PN5180_BUSY, PN5180_RST);
+
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  
+  nfc.begin();
+  Serial.begin(115200);
+
+  Serial.println(F("----------------------------------"));
+  Serial.println(F("Reading product version..."));
+  uint8_t productVersion[2];
+  nfc.readEEprom(PRODUCT_VERSION, productVersion, sizeof(productVersion));
+  Serial.print(F("Product version="));
+  Serial.print(productVersion[1]);
+  Serial.print(".");
+  Serial.println(productVersion[0]);
+  
+  if (0xff == productVersion[1]) { // if product version 255, the initialization failed
+    Serial.println(F("Initialization failed!?"));
+    Serial.println(F("Press reset to restart..."));
+    //Serial.flush();
+   // exit(-1); // halt
+  }
+  else{
+    Serial.println(F("Initialization successful!"));
+    Serial.println(F("Waiting to read card..."));    
+  }
+}
+
+void loop() {
+  nfc.reset();
+  nfc.setupRF();
+  uint8_t uid[8];
+  
+  ISO15693ErrorCode rc = nfc.getInventory(uid);
+  if (rc == ISO15693_EC_OK) {
+    if (rc >= 0) {
+        Serial.print("UID = ");
+        for (int i = 0; i < 8; i++) {
+          Serial.print(uid[7 - i], HEX);
+          Serial.println (" ");
+      }
+      digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+      delay(1000);                       // wait for a second
+      digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW 
+    }
+  }
+  delay(1000);
+}
