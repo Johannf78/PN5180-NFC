@@ -1,0 +1,34 @@
+#include <PN5180.h>
+#include <PN5180ISO15693.h>
+
+#define PN5180_NSS 5
+#define PN5180_BUSY 16
+#define PN5180_RST 17
+
+PN5180ISO15693 nfc(PN5180_NSS, PN5180_BUSY, PN5180_RST);
+
+void setup() {
+  nfc.begin();
+  Serial.begin(115200);
+
+  Serial.println(F("----------------------------------"));
+  Serial.println(F("Reading product version..."));
+  uint8_t productVersion[2];
+  nfc.readEEprom(PRODUCT_VERSION, productVersion, sizeof(productVersion));
+  Serial.print(F("Product version="));
+  Serial.print(productVersion[1]);
+  Serial.print(".");
+  Serial.println(productVersion[0]);
+  
+  if (0xff == productVersion[1]) { // if product version 255, the initialization failed
+    Serial.println(F("Initialization failed!?"));
+    Serial.println(F("Press reset to restart..."));
+    //Serial.flush();
+   // exit(-1); // halt
+  }
+  
+}
+
+void loop() {
+  
+}
